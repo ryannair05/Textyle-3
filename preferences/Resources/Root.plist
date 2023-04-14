@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>items</key>
+	<array>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Settings</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.ryannair05.textyle</string>
+			<key>key</key>
+			<string>Enabled</string>
+			<key>label</key>
+			<string>Enabled</string>
+			<key>PostNotification</key>
+			<string>com.ryannair05.textyle/preferences</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.ryannair05.textyle</string>
+			<key>key</key>
+			<string>ToggleMenu</string>
+			<key>label</key>
+			<string>Enable Keyboard Toggle</string>
+			<key>PostNotification</key>
+			<string>com.ryannair05.textyle/preferences</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>footerText</key>
+			<string>All settings require you to restart your apps or respring to apply changes</string>
+			<key>footerAlignment</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSLinkCell</string>
+			<key>label</key>
+			<string>Edit Styles</string>
+			<key>detail</key>
+			<string>TXTStylesController</string>
+			<key>isController</key>
+			<true/>
+			<key>icon</key>
+			<string>styles.png</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSLinkListCell</string>
+			<key>detail</key>
+			<string>TXTAppListController</string>
+			<key>defaults</key>
+			<string>com.ryannair05.textyle</string>
+			<key>key</key>
+			<string>enabledApps</string>
+			<key>label</key>
+			<string>App Settings</string>
+			<key>defaultApplicationSwitchValue</key>
+			<true/>
+			<key>useSearchBar</key>
+			<true/>
+			<key>hideSearchBarWhileScrolling</key>
+			<true/>
+			<key>icon</key>
+			<string>blacklist.png</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSLinkCell</string>
+			<key>label</key>
+			<string>Menu Appearance</string>
+			<key>detail</key>
+			<string>TXTAppearanceController</string>
+			<key>isController</key>
+			<true/>
+			<key>icon</key>
+			<string>menu.png</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Support</string>
+		</dict>
+		<dict>
+			<key>cellClass</key>
+			<string>TXTTwitterCell</string>
+			<key>label</key>
+			<string>Ryan Nair</string>
+			<key>user</key>
+			<string>ryannair05</string>
+		</dict>
+	</array>
+	<key>title</key>
+	<string>Textyle 3</string>
+</dict>
+</plist>

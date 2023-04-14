@@ -1,0 +1,13 @@
+Package: com.ryannair05.textyle3
+Name: Textyle 3
+Depends: mobilesubstrate, firmware (>=15.0)
+Recommends: com.opa334.altlist
+Conflicts: com.d11z.textyle
+Replaces: com.ryannair05.textyle
+Architecture: iphoneos-arm
+Description: Quickly style any text
+Maintainer: Ryan Nair
+Author: Ryan Nair
+Section: Tweaks
+Icon: file:///var/jb/Library/PreferenceBundles/Textyle.bundle/cydia.png
+Version: 1.0.0
