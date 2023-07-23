@@ -63,8 +63,8 @@
     
     [self.collectionView.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor].active = YES;
     [self.collectionView.centerYAnchor constraintEqualToAnchor:self.view.centerYAnchor].active = YES;
-    [self.collectionView.heightAnchor constraintEqualToConstant:315].active = YES;
-    [self.collectionView.widthAnchor constraintEqualToConstant:230].active = YES;
+    [self.collectionView.heightAnchor constraintEqualToConstant:kMenuHeight].active = YES;
+    [self.collectionView.widthAnchor constraintEqualToConstant:kMenuWidth].active = YES;
 
     UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemChromeMaterial]];
     blurEffectView.translatesAutoresizingMaskIntoConstraints = false;

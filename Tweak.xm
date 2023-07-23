@@ -4,11 +4,10 @@
 #import "NSString+Stylize.h"
 
 static UIImage * resizeImage(UIImage *original, CGSize size) {
-    UIGraphicsBeginImageContextWithOptions(size, NO, 0.0);
-    [original drawInRect:CGRectMake(0, 0, size.width, size.height)];
-    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
-    return image;
+    UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:size];
+    return [renderer imageWithActions:^(UIGraphicsImageRendererContext * _Nonnull context) {
+        [original drawInRect:CGRectMake(0, 0, size.width, size.height)];
+    }];
 }
 
 %group Textyle
@@ -31,7 +30,7 @@ static UIImage * resizeImage(UIImage *original, CGSize size) {
 
         NSArray *styles = [styleManager enabledStyles];
         for (NSDictionary *style in styles) {
-            NSString *action = [NSString stringWithFormat:@"txt_%@", style[@"name"]];
+            NSString *action = [@"txt_" stringByAppendingString: style[@"name"]];
             UIMenuItem *item = [[UIMenuItem alloc] initWithTitle:style[@"label"] action:NSSelectorFromString(action)];
 
             [items addObject:item];
@@ -117,11 +116,7 @@ static UIImage * resizeImage(UIImage *original, CGSize size) {
 
 - (void)setupWithTitle:(id)arg1 action:(SEL)arg2 type:(int)arg3 {
     if (menuIcon && arg2 == @selector(txtOpenStyleMenu:)) {
-        #ifdef THEOS_PACKAGE_INSTALL_PREFIX
-        UIImage *image = resizeImage([UIImage imageWithContentsOfFile:@"/var/jb/Library/PreferenceBundles/Textyle.bundle/menuIcon.png"], CGSizeMake(18, 18));
-        #else
-        UIImage *image = resizeImage([UIImage imageWithContentsOfFile:@"/Library/PreferenceBundles/Textyle.bundle/menuIcon.png"], CGSizeMake(18, 18));
-        #endif
+        UIImage *image = resizeImage([UIImage imageWithContentsOfFile:kMenuIcon], CGSizeMake(18, 18));
         [self setupWithImage:image action:arg2 type:arg3];
 
         if (tintIcon) {
@@ -226,41 +221,80 @@ static UIImage * resizeImage(UIImage *original, CGSize size) {
 %end
 
 %subclass TXTDockItemButton : UIKeyboardDockItemButton
+%property (nonatomic,retain) UITapGestureRecognizer * singleTap;
 
 - (void)setTintColor:(UIColor *)arg1 {
-    %orig(active ? kAccentColorAlpha : arg1);
+    [UIView animateWithDuration:0.25 delay:0 options:UIViewAnimationOptionTransitionCrossDissolve animations:^{
+        %orig(active ? kAccentColorAlpha : arg1);
+    } completion:nil];
+
 }
 
 -(void)setImage:(UIImage *)image forState:(NSUInteger)state{
-    #ifdef THEOS_PACKAGE_INSTALL_PREFIX
-    %orig([UIImage imageWithContentsOfFile:@"/var/jb/Library/PreferenceBundles/Textyle.bundle/menuIcon.png"], state);
-    #else
-    %orig([UIImage imageWithContentsOfFile:@"/Library/PreferenceBundles/Textyle.bundle/menuIcon.png"], state);
-    #endif
+    if (self.singleTap.enabled) {
+        #ifdef THEOS_PACKAGE_INSTALL_PREFIX
+        %orig([UIImage imageWithContentsOfFile:@"/var/jb/Library/PreferenceBundles/Textyle.bundle/menuIcon.png"], state);
+        #else
+        %orig([UIImage imageWithContentsOfFile:@"/Library/PreferenceBundles/Textyle.bundle/menuIcon.png"], state);
+        #endif
+    }
+    else {
+        %orig;
+    }
 }
 
 %end
 
 %hook UISystemKeyboardDockController
+%property (nonatomic,retain) UILongPressGestureRecognizer *longPress;
 
 - (void)loadView {
     %orig;
 
-    UIKeyboardDockItem *dockItem = MSHookIvar<UIKeyboardDockItem *>(self, "_dictationDockItem");
-    object_setClass(dockItem.button, %c(TXTDockItemButton));
+    UIKeyboardDockItemButton *dockItem = [MSHookIvar<UIKeyboardDockItem *>(self, "_dictationDockItem") button];
+    object_setClass(dockItem, %c(TXTDockItemButton));
 
-    UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(txtLongPress:)];
-    longPress.cancelsTouchesInView = NO;
-    longPress.minimumPressDuration = 0.3f;
-    [dockItem.button addGestureRecognizer:longPress];
+    self.longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(txtLongPress:)];
+    self.longPress.cancelsTouchesInView = NO;
+    self.longPress.minimumPressDuration = 0.3f;
+    [dockItem addGestureRecognizer:self.longPress];
 
-    UITapGestureRecognizer *singleTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(txtToggleActive)];
-    singleTap.numberOfTapsRequired = 1;
-    [dockItem.button addGestureRecognizer:singleTap];
+    dockItem.singleTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(txtToggleActive)];
+    dockItem.singleTap.numberOfTapsRequired = 1;
+    [dockItem addGestureRecognizer:dockItem.singleTap];
+
+    UITapGestureRecognizer* doubleTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(txtToggleDouble)];
+    doubleTap.numberOfTapsRequired = 2;
+    [dockItem addGestureRecognizer:doubleTap];
+    [doubleTap setDelaysTouchesBegan:YES];
+}
+
+%new
+- (void)txtToggleDouble {
+    UIKeyboardDockItemButton *dockItem = [MSHookIvar<UIKeyboardDockItem *>(self, "_dictationDockItem") button];
+    if (active) {
+        active = false;
+        [dockItem setTintColor:[UIColor whiteColor]];
+    }
+
+    if (dockItem.singleTap.enabled) {
+        dockItem.singleTap.enabled = false;
+        self.longPress.enabled = false;
+        [dockItem setImage:resizeImage([UIImage systemImageNamed:@"mic.fill"], CGSizeMake(25, 30)) forState: UIControlStateNormal];
+    }
+    else {
+        dockItem.singleTap.enabled = true;
+        self.longPress.enabled = true;
+        [dockItem setImage:nil forState: UIControlStateNormal];
+    }
 }
 
 - (void)dictationItemButtonWasPressed:(id)arg1 withEvent:(id)arg2 {
-    return;
+    UIKeyboardDockItemButton *dockItem = [MSHookIvar<UIKeyboardDockItem *>(self, "_dictationDockItem") button];
+
+    if (!dockItem.singleTap.enabled && !active) {
+        %orig;
+    }
 }
 
 %new
@@ -269,7 +303,7 @@ static UIImage * resizeImage(UIImage *original, CGSize size) {
     if (active) spongebobCounter = 0;
 
     UIKeyboardDockItem *dockItem = MSHookIvar<UIKeyboardDockItem *>(self, "_dictationDockItem");
-    [dockItem.button setTintColor:kAccentColorAlpha];
+    [dockItem.button setTintColor:[UIColor whiteColor]];
 }
 
 %new
@@ -279,11 +313,7 @@ static UIImage * resizeImage(UIImage *original, CGSize size) {
         [hapticFeedbackGenerator prepare];
 
         if (!active) {
-            active = true;
-            spongebobCounter = 0;
-
-            UIKeyboardDockItem *dockItem = MSHookIvar<UIKeyboardDockItem *>(self, "_dictationDockItem");
-            [dockItem.button setTintColor:kAccentColorAlpha];
+            [self txtToggleActive];
         }
         
         if (!selectionWindow) {
@@ -353,13 +383,7 @@ static UIImage * resizeImage(UIImage *original, CGSize size) {
         }
     }
 
-    #ifdef THEOS_PACKAGE_INSTALL_PREFIX
-    NSString *path = [NSString stringWithFormat:@"/var/jb/var/mobile/Library/Preferences/com.ryannair05.textyle.plist"];
-    #else
-    NSString *path = [NSString stringWithFormat:@"var/mobile/Library/Preferences/com.ryannair05.textyle.plist"];
-    #endif
-
-    NSDictionary *preferences = [[NSDictionary alloc] initWithContentsOfFile:path];
+    NSDictionary *preferences = [[NSDictionary alloc] initWithContentsOfFile:kPrefsPath];
 
     enabled = [([preferences objectForKey:@"Enabled"] ?: @(YES)) boolValue];
     toggleMenu = [([preferences objectForKey:@"ToggleMenu"] ?: @(YES)) boolValue];

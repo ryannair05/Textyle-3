@@ -34,6 +34,10 @@
 @end
 
 @interface UIKeyboardDockItemButton : UIButton
+@property (nonatomic,retain) UITapGestureRecognizer *singleTap;
+@end
+
+@interface TXTDockItemButton:UIKeyboardDockItemButton
 @end
 
 @interface UIKeyboardDockItem : NSObject
@@ -41,14 +45,20 @@
 @property (nonatomic, retain) NSString *identifier;
 @property (nonatomic, retain) UIImage *image;
 @property (nonatomic, assign) BOOL enabled;
-- (UIKeyboardDockItemButton *)button;
+@property(retain, nonatomic) UIKeyboardDockItemButton *button;
 - (id)initWithImageName:(id)arg1 identifier:(id)arg2;
 - (void)setEnabled:(BOOL)arg1;
 - (void)setImage:(UIImage *)arg1;
 @end
 
+
+@interface UIKeyboardDockView : UIView
+-(void)setRightDockItem:(UIKeyboardDockItem *)arg1;
+@end
+
 @interface UISystemKeyboardDockController : UIViewController
-@property (nonatomic, retain) UIButton *swappedButton;
+@property (nonatomic,retain) UIKeyboardDockView *dockView;
+@property (nonatomic,retain) UILongPressGestureRecognizer *longPress;
 - (void)loadView;
 - (void)dictationItemButtonWasPressed:(id)arg1 withEvent:(id)arg2;
 - (void)txtToggleActive;

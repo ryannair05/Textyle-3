@@ -25,25 +25,13 @@
 
         NSArray *styles;
 
-        #ifdef THEOS_PACKAGE_INSTALL_PREFIX
-        if ([[NSFileManager defaultManager] fileExistsAtPath:@"/var/jb/var/mobile/Library/Preferences/com.ryannair05.textyle.maps.plist"]) {
-            styles = [[NSArray alloc] initWithContentsOfFile:@"/var/jb/var/mobile/Library/Preferences/com.ryannair05.textyle.maps.plist"];
+        if ([[NSFileManager defaultManager] fileExistsAtPath:kUserStylesPath]) {
+            styles = [[NSArray alloc] initWithContentsOfFile:kUserStylesPath];
         } else {
-            styles = [[NSArray alloc] initWithContentsOfFile:@"/var/jb/Library/Application Support/Textyle/styles.plist"];
+            styles = [[NSArray alloc] initWithContentsOfFile:kEnabledStylesPath];
         }
-        #else
-        if ([[NSFileManager defaultManager] fileExistsAtPath:@"/var/mobile/Library/Preferences/com.ryannair05.textyle.maps.plist"]) {
-            styles = [[NSArray alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/com.ryannair05.textyle.maps.plist"];
-        } else {
-            styles = [[NSArray alloc] initWithContentsOfFile:@"/Library/Application Support/Textyle/styles.plist"];
-        }
-        #endif
-
-        #ifdef THEOS_PACKAGE_INSTALL_PREFIX
-        NSDictionary *preferences = [[NSDictionary alloc] initWithContentsOfFile:@"/var/jb/var/mobile/Library/Preferences/com.ryannair05.textyle.styles.plist"];
-        #else
-        NSDictionary *preferences = [[NSDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/com.ryannair05.textyle.styles.plist"];
-        #endif
+        
+        NSDictionary *preferences = [[NSDictionary alloc] initWithContentsOfFile:kEnabledStylesPath];
 
         if (preferences) {
             _enabledStyles = [styles filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id style, NSDictionary *bindings) {
@@ -70,17 +58,11 @@
     BOOL const isSpringBoard = CFEqual(identifier, CFSTR("com.apple.springboard"));
 
     if (isSpringBoard) {
-        #ifdef THEOS_PACKAGE_INSTALL_PREFIX
-        NSString *path = [NSString stringWithFormat:@"/var/jb/var/mobile/Library/Preferences/com.ryannair05.textyle.plist"];
-        #else
-        NSString *path = [NSString stringWithFormat:@"/var/mobile/Library/Preferences/com.ryannair05.textyle.plist"];
-        #endif
-
         NSMutableDictionary *prefs = [NSMutableDictionary dictionary];
-        [prefs addEntriesFromDictionary:[NSDictionary dictionaryWithContentsOfFile:path]];
+        [prefs addEntriesFromDictionary:[NSDictionary dictionaryWithContentsOfFile:kPrefsPath]];
 
         [prefs setObject:self.activeStyle[@"name"] forKey:@"ActiveStyle"];
-        [prefs writeToFile:path atomically:YES];
+        [prefs writeToFile:kPrefsPath atomically:YES];
     }
 }
 
