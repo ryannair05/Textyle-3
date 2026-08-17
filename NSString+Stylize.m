@@ -3,77 +3,86 @@
 @implementation NSString (Stylize)
 
 + (NSString *)stylizeText:(NSString *)text withMap:(NSDictionary *)map {
-    NSUInteger length = text.length;
-    NSMutableString *stylized = [NSMutableString stringWithCapacity:length];
-    
-    [text enumerateSubstringsInRange:NSMakeRange(0, length) options:NSStringEnumerationByComposedCharacterSequences
-        usingBlock: ^(NSString *key, NSRange inSubstringRange, NSRange inEnclosingRange, BOOL *outStop) {
-        if ([map objectForKey:key]) {
-            [stylized appendString:map[key]];
-        } else {
-            [stylized appendString:key];
-        }
-    }];
+    if (text.length == 0 || map.count == 0) {
+        return text;
+    }
 
+    NSMutableString *stylized = [NSMutableString stringWithCapacity:text.length];
+    [text enumerateSubstringsInRange:NSMakeRange(0, text.length)
+                             options:NSStringEnumerationByComposedCharacterSequences
+                          usingBlock:^(NSString *key,
+                                       NSRange substringRange,
+                                       NSRange enclosingRange,
+                                       BOOL *stop) {
+        NSString *replacement = map[key];
+        [stylized appendString:replacement ?: key];
+    }];
     return stylized;
 }
 
 + (NSString *)stylizeTextSpongebob:(NSString *)text {
-    NSCharacterSet *letters = [NSCharacterSet letterCharacterSet];
-    NSUInteger length = text.length;
-    NSMutableString *stylized = [NSMutableString stringWithCapacity:length];
-    unichar buffer[length + 1];
-
-    [text getCharacters:buffer range:NSMakeRange(0, length)];
-
-    BOOL shouldUppercase = YES;
-    for (int i = 0; i < length; i++) {
-        if ([letters characterIsMember:buffer[i]]) {
-            if (shouldUppercase) {
-                [stylized appendString:[[NSString stringWithCharacters:&buffer[i] length:1] localizedUppercaseString]];
-            } else {
-                [stylized appendString:[[NSString stringWithCharacters:&buffer[i] length:1] localizedLowercaseString]];
-            }
-            shouldUppercase = !shouldUppercase;
-        } else {
-            [stylized appendFormat:@"%C", buffer[i]];
-        }
-    }
-
-    return stylized;
+    int counter = 0;
+    return [self stylizeTextSpongebobActive:text counter:&counter];
 }
 
-+ (NSString *)stylizeText:(NSString *)text withCombiningChar:(NSString *)combiningChar {
-    NSUInteger length = text.length;
-    NSMutableString *stylized = [NSMutableString stringWithCapacity:length * combiningChar.length];
-    unichar buffer[length + 1];
-
-    [text getCharacters:buffer range:NSMakeRange(0, length)];
-
-    for (int i = 0; i < length; i++) {
-        [stylized appendFormat:@"%c%@", buffer[i], combiningChar];
++ (NSString *)stylizeText:(NSString *)text withCombiningChar:(NSString *)combiningCharacter {
+    if (text.length == 0 || combiningCharacter.length == 0) {
+        return text;
     }
 
+    NSMutableString *stylized = [NSMutableString stringWithCapacity:text.length];
+    [text enumerateSubstringsInRange:NSMakeRange(0, text.length)
+                             options:NSStringEnumerationByComposedCharacterSequences
+                          usingBlock:^(NSString *substring,
+                                       NSRange substringRange,
+                                       NSRange enclosingRange,
+                                       BOOL *stop) {
+        [stylized appendString:substring];
+        [stylized appendString:combiningCharacter];
+    }];
     return stylized;
 }
 
 + (NSString *)stylizeText:(NSString *)text withStyle:(NSDictionary *)style {
     if (style[@"map"]) {
-        return [NSString stylizeText:text withMap:style[@"map"]];
-    } else if (style[@"combine"]) {
-        return [NSString stylizeText:text withCombiningChar:style[@"combine"]];
-    } else if ([style[@"function"] isEqualToString:@"spongebob"]) {
-        return [NSString stylizeTextSpongebob:text];
+        return [self stylizeText:text withMap:style[@"map"]];
     }
-
+    if (style[@"combine"]) {
+        return [self stylizeText:text withCombiningChar:style[@"combine"]];
+    }
+    if ([style[@"function"] isEqualToString:@"spongebob"]) {
+        return [self stylizeTextSpongebob:text];
+    }
     return nil;
 }
 
 + (NSString *)stylizeTextSpongebobActive:(NSString *)text counter:(int *)counter {
-    NSString *stylized;
-    *counter += 1;
+    if (text.length == 0) {
+        return text;
+    }
 
-    stylized = (*counter % 2) ? [text localizedUppercaseString] : [text localizedLowercaseString];
+    NSCharacterSet *letters = [NSCharacterSet letterCharacterSet];
+    NSMutableString *stylized = [NSMutableString stringWithCapacity:text.length];
+    __block int currentCounter = *counter;
+
+    [text enumerateSubstringsInRange:NSMakeRange(0, text.length)
+                             options:NSStringEnumerationByComposedCharacterSequences
+                          usingBlock:^(NSString *substring,
+                                       NSRange substringRange,
+                                       NSRange enclosingRange,
+                                       BOOL *stop) {
+        if ([substring rangeOfCharacterFromSet:letters].location == NSNotFound) {
+            [stylized appendString:substring];
+            return;
+        }
+
+        currentCounter += 1;
+        [stylized appendString:(currentCounter % 2)
+            ? substring.localizedUppercaseString
+            : substring.localizedLowercaseString];
+    }];
+
+    *counter = currentCounter;
     return stylized;
 }
 

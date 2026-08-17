@@ -1,19 +1,18 @@
 #import "TXTTwitterCell.h"
 #import <Preferences/PSSpecifier.h>
 
+@interface TXTTwitterCell ()
+@property (nonatomic, strong) UIImage *avatarImage;
+@end
+
 @implementation TXTTwitterCell {
     NSString *_user;
+    UIImageView *_avatarImageView;
 }
 
 + (NSString *)_urlForUsername:(NSString *)user {
-    if ([[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"aphelion://"]]) {
+    if ([[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"aphelion://"]]) { // third-party Twitter client are no more
         return [@"aphelion://profile/" stringByAppendingString:user];
-    } else if ([[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"tweetbot://"]]) {
-        return [@"tweetbot:///user_profile/" stringByAppendingString:user];
-    } else if ([[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"twitterrific://"]]) {
-        return [@"twitterrific:///profile?screen_name=" stringByAppendingString:user];
-    } else if ([[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"tweetings://"]]) {
-        return [@"tweetings:///user?screen_name=" stringByAppendingString:user];
     } else if ([[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"twitter://"]]) {
         return [@"twitter://user?screen_name=" stringByAppendingString:user];
     } else {
@@ -23,9 +22,9 @@
 
 - (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier specifier:(PSSpecifier *)specifier {
     self = [super initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:reuseIdentifier specifier:specifier];
-    _user = [specifier.properties[@"user"] copy];
 
     if (self) {
+        _user = [specifier.properties[@"user"] copy];
         specifier.cellType = PSLinkCell;
         specifier.buttonAction = @selector(txt_openURL:);
         specifier.properties[@"url"] = [self.class _urlForUsername:_user];
@@ -39,20 +38,20 @@
         specifier.properties[@"iconImage"] = UIGraphicsGetImageFromCurrentImageContext();
         UIGraphicsEndImageContext();
 
-        _avatarView = [[UIView alloc] initWithFrame:self.imageView.bounds];
-        _avatarView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        _avatarView.backgroundColor = [UIColor colorWithWhite:0.9f alpha:1];
-        _avatarView.userInteractionEnabled = NO;
-        _avatarView.clipsToBounds = YES;
-        _avatarView.layer.cornerRadius = size / 2;
-        [self.imageView addSubview:_avatarView];
+        UIView *avatarView = [[UIView alloc] initWithFrame:self.imageView.bounds];
+        avatarView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        avatarView.backgroundColor = [UIColor colorWithWhite:0.9f alpha:1];
+        avatarView.userInteractionEnabled = NO;
+        avatarView.clipsToBounds = YES;
+        avatarView.layer.cornerRadius = size / 2;
+        [self.imageView addSubview:avatarView];
 
-        _avatarImageView = [[UIImageView alloc] initWithFrame:_avatarView.bounds];
+        _avatarImageView = [[UIImageView alloc] initWithFrame:avatarView.bounds];
         _avatarImageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         _avatarImageView.alpha = 0;
         _avatarImageView.userInteractionEnabled = NO;
         _avatarImageView.layer.minificationFilter = kCAFilterTrilinear;
-        [_avatarView addSubview:_avatarImageView];
+        [avatarView addSubview:_avatarImageView];
 
         [self loadAvatar];
     }
@@ -66,12 +65,9 @@
 
 - (void)setAvatarImage:(UIImage *)avatarImage {
     _avatarImageView.image = avatarImage;
-
-    if (_avatarImageView.alpha == 0) {
-        [UIView animateWithDuration:0.15 animations:^{
-                                             _avatarImageView.alpha = 1;
-                                         }];
-    }
+    [UIView animateWithDuration:0.15 animations:^{
+        self->_avatarImageView.alpha = 1;
+    }];
 }
 
 - (void)loadAvatar {
@@ -88,35 +84,22 @@
         return;
     }
 
-    if (self.avatarImage) {
-        return;
-    }
-
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-            
-        NSError __block *err = NULL;
-        NSData __block *data;
-        BOOL __block reqProcessed = false;
-        
-        NSURLRequest *request = [NSURLRequest requestWithURL:twitterURL];
-        
-        [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData  *_data, NSURLResponse *_response, NSError *_error) {
-            err = _error;
-            data = _data;
-            reqProcessed = true;
-        }] resume];
-
-        while (!reqProcessed) {
-            [NSThread sleepForTimeInterval:0];
+    [[[NSURLSession sharedSession]
+        dataTaskWithURL:twitterURL
+      completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        if (error != nil || data == nil) {
+            return;
         }
 
-        if (err)
+        UIImage *image = [UIImage imageWithData:data];
+        if (image == nil) {
             return;
+        }
 
         dispatch_async(dispatch_get_main_queue(), ^{
-            self.avatarImage = [UIImage imageWithData:data];
+            self.avatarImage = image;
         });
-    });
+    }] resume];
 }
 
 @end

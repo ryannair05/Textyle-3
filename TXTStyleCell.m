@@ -1,5 +1,5 @@
 #import "TXTStyleCell.h"
-#import "TXTStyleManager.h"
+#import "TXTConstants.h"
 
 @implementation TXTStyleCell
 
@@ -10,13 +10,23 @@
         _label = [[UILabel alloc] init];
         [_label setTextColor:[UIColor labelColor]];
         [_label setTextAlignment:NSTextAlignmentCenter];
-        [_label setFont:[UIFont systemFontOfSize:16]];
+        [_label setFont:[UIFont preferredFontForTextStyle:UIFontTextStyleBody]];
+        _label.adjustsFontForContentSizeCategory = YES;
+        _label.accessibilityIdentifier =
+            @"com.ryannair05.textyle.style-selector.label";
 
         [self.contentView addSubview:_label];
 
-        [_label setTranslatesAutoresizingMaskIntoConstraints: NO];
-        [_label.centerXAnchor constraintEqualToAnchor:self.contentView.centerXAnchor].active = YES;
-        [_label.centerYAnchor constraintEqualToAnchor:self.contentView.centerYAnchor].active = YES;
+        _label.translatesAutoresizingMaskIntoConstraints = NO;
+        [NSLayoutConstraint activateConstraints:@[
+            [_label.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor
+                                                 constant:16.0],
+            [_label.centerYAnchor constraintEqualToAnchor:self.contentView.centerYAnchor],
+            [_label.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor
+                                                   constant:-16.0],
+        ]];
+
+        self.isAccessibilityElement = YES;
     }
 
     return self;
@@ -24,20 +34,19 @@
 
 - (void)updateConfigurationUsingState:(UICellConfigurationState *)state {
     [super updateConfigurationUsingState:state];
-    
-    if (state.isSelected) {
-        [[TXTStyleManager sharedManager] selectStyle:_label.text];
 
-        [UIView animateWithDuration:0.25
-               animations:^{
-                    [self setBackgroundColor:[UIColor colorWithRed:1.00 green:0.18 blue:0.33 alpha:1.0f]];
-               }
-          ];
+    BOOL emphasized = state.isSelected || state.isHighlighted;
+    self.backgroundColor = emphasized
+        ? kAccentColor
+        : UIColor.clearColor;
+    self.contentView.backgroundColor = UIColor.clearColor;
+    self.label.textColor = emphasized ? UIColor.whiteColor : UIColor.labelColor;
+
+    UIAccessibilityTraits traits = UIAccessibilityTraitButton;
+    if (state.isSelected) {
+        traits |= UIAccessibilityTraitSelected;
     }
-    else {
-        [self setBackgroundColor:[UIColor clearColor]];
-    }
-    
+    self.accessibilityTraits = traits;
 }
 
 @end

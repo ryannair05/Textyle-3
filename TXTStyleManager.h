@@ -1,11 +1,20 @@
-#import <UIKit/UIKit.h>
+#pragma once
+
+#import <Foundation/Foundation.h>
+
+NS_ASSUME_NONNULL_BEGIN
+
+FOUNDATION_EXPORT NSNotificationName const TXTActiveStyleDidChangeNotification;
 
 @interface TXTStyleManager : NSObject
-@property (nonatomic, strong) NSDictionary *activeStyle;
-@property (nonatomic, strong) NSArray *enabledStyles;
+
+@property (nonatomic, strong, readonly, nullable) NSDictionary *activeStyle;
+@property (nonatomic, copy, readonly) NSArray<NSDictionary *> *enabledStyles;
+
 + (instancetype)sharedManager;
 - (void)selectStyle:(NSString *)name;
-- (NSDictionary *)styleWithName:(NSString *)name;
+- (nullable NSDictionary *)styleWithName:(NSString *)name;
+
 @end
 
-FOUNDATION_EXPORT CFNotificationCenterRef CFNotificationCenterGetDistributedCenter(void);
+NS_ASSUME_NONNULL_END

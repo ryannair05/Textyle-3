@@ -1,2 +1,5 @@
 .theos
 .DS_Store
+/Simulator
+/.agents
+/.codex

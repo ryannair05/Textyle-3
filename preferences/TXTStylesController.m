@@ -1,12 +1,7 @@
 #import "TXTStylesController.h"
+#import "TXTPreferences.h"
+
 #import <Preferences/PSSpecifier.h>
-
-#ifdef THEOS_PACKAGE_INSTALL_PREFIX
-    #define kUserStylesPath @"/var/jb/var/mobile/Library/Preferences/com.ryannair05.textyle.maps.plist"
-#else
-    #define kUserStylesPath @"/var/mobile/Library/Preferences/com.ryannair05.textyle.maps.plist"
-#endif
-
 
 @implementation TXTStylesController {
     NSArray *styles;
@@ -17,8 +12,6 @@
 
     self.title = @"Edit Styles";
     self.navigationItem.rightBarButtonItem = self.editButtonItem;
-
-    [self loadStyles];
 }
 
 - (NSArray *)specifiers {
@@ -26,11 +19,9 @@
         NSMutableArray *specifiers = [NSMutableArray array];
 
         PSSpecifier *group = [PSSpecifier groupSpecifierWithName:@"Installed Styles"];
-        #ifdef THEOS_PACKAGE_INSTALL_PREFIX
-        [group setProperty:@"To add/modify styles, edit /var/jb/var/mobile/Library/Preferences/com.ryannair05.textyle.maps.plist" forKey:@"footerText"];
-        #else
-        [group setProperty:@"To add/modify styles, edit /var/mobile/Library/Preferences/com.ryannair05.textyle.maps.plist" forKey:@"footerText"];
-        #endif
+        [group setProperty:[NSString stringWithFormat:@"To add or modify styles, edit %@.",
+                                                      TXTUserStylesPath]
+                    forKey:@"footerText"];
 
         [specifiers addObject:group];
 
@@ -60,18 +51,15 @@
 }
 
 - (void)loadStyles {
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-
-    if (![fileManager fileExistsAtPath:kUserStylesPath]) {
-        #ifdef THEOS_PACKAGE_INSTALL_PREFIX
-            styles = [[NSArray alloc] initWithContentsOfFile:@"/var/jb/Library/Application Support/Textyle/styles.plist"];
-        #else
-            styles = [[NSArray alloc] initWithContentsOfFile:@"/Library/Application Support/Textyle/styles.plist"];
-        #endif
-
-        [styles writeToFile:kUserStylesPath atomically:YES];
+    if (![[NSFileManager defaultManager] fileExistsAtPath:TXTUserStylesPath]) {
+        NSArray *installedStyles = [NSArray arrayWithContentsOfFile:TXTSystemStylesPath];
+        styles = [installedStyles isKindOfClass:[NSArray class]] ? installedStyles : @[];
+        if (styles.count > 0) {
+            [styles writeToFile:TXTUserStylesPath atomically:YES];
+        }
     } else {
-        styles = [[NSArray alloc] initWithContentsOfFile:kUserStylesPath];
+        NSArray *userStyles = [NSArray arrayWithContentsOfFile:TXTUserStylesPath];
+        styles = [userStyles isKindOfClass:[NSArray class]] ? userStyles : @[];
     }
 }
 
@@ -79,8 +67,13 @@
     [super setEditing:editing animated:animated];
     [self.table setEditing:editing animated:animated];
 
-    if (!editing) {
-        [styles writeToFile:kUserStylesPath atomically:YES];
+    if (!editing && [styles writeToFile:TXTUserStylesPath atomically:YES]) {
+        CFNotificationCenterPostNotification(
+            CFNotificationCenterGetDarwinNotifyCenter(),
+            CFSTR("com.ryannair05.textyle.styles/enabledStyles"),
+            NULL,
+            NULL,
+            YES);
     }
 }
 

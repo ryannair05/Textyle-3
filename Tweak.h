@@ -1,104 +1,42 @@
-#import "TXTStyleSelectionController.h"
+#pragma once
 
-@interface UICalloutBar : UIView
-@property (nonatomic, retain) NSArray *extraItems;
-@property (nonatomic, retain) UIMenuItem *txtMainMenuItem;
-@property (nonatomic, retain) NSArray *txtStyleMenuItems;
-+ (id)sharedCalloutBar;
-+ (void)_releaseSharedInstance;
-- (void)update;
-- (void)resetPage;
+#import <UIKit/UIKit.h>
+
+NS_ASSUME_NONNULL_BEGIN
+
+@interface NSDistributedNotificationCenter : NSNotificationCenter
++ (instancetype)defaultCenter;
 @end
 
-@interface UICalloutBarButton : UIButton
-@property (nonatomic, assign) SEL action;
-- (void)setupWithTitle:(id)arg1 action:(SEL)arg2 type:(int)arg3;
-- (void)setupWithImage:(id)arg1 action:(SEL)arg2 type:(int)arg3;
-@end
+FOUNDATION_EXPORT NSNotificationName const TXTLiveStateDidChangeNotification;
+FOUNDATION_EXPORT NSString * const TXTStyleDidChangeDistributedNotification;
+FOUNDATION_EXPORT NSString * const TXTDockModeDidChangeDistributedNotification;
 
-@interface UIMenuItem (Textyle)
-@property (assign, nonatomic) BOOL dontDismiss;
-@end
+FOUNDATION_EXPORT BOOL TXTLiveTypingActive;
+FOUNDATION_EXPORT BOOL TXTDockUsesTextyle;
+FOUNDATION_EXPORT NSString * _Nullable TXTActiveStyleName;
+FOUNDATION_EXPORT NSUInteger TXTLiveStateGeneration;
 
-@interface UIResponder (Textyle)
-- (NSRange)_selectedNSRange;
-- (id)_fullText;
-- (id)_textRangeFromNSRange:(NSRange)arg1;
-- (void)replaceRange:(id)arg1 withText:(id)arg2;
-- (void)txtDidSelectStyle:(NSString *)name;
-- (void)txtReplaceSelectedText:(NSDictionary *)map;
-@end
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-@interface UIImageView (Textyle)
-- (long long)_defaultRenderingMode;
-@end
+UIImage * _Nullable resizeImage(UIImage * _Nullable image, CGSize size);
+void TXTSetLiveTypingActive(BOOL active);
+void TXTSetDockUsesTextyleAndBroadcast(BOOL usesTextyle);
 
-@interface UIKeyboardDockItemButton : UIButton
-@property (nonatomic,retain) UITapGestureRecognizer *singleTap;
-@end
+void TXTInitializeLegacyDockHooks(void);
+void TXTInitializeModernDockHooks(void);
 
-@interface TXTDockItemButton:UIKeyboardDockItemButton
-@end
+#if defined(TEXTYLE_SIMJECT)
+BOOL TXTModernDockTintIsActiveForTesting(void);
+BOOL TXTModernDockImageIsTextyleForTesting(void);
+#endif
 
-@interface UIKeyboardDockItem : NSObject
-@property (nonatomic, readonly) UIView *view;
-@property (nonatomic, retain) NSString *identifier;
-@property (nonatomic, retain) UIImage *image;
-@property (nonatomic, assign) BOOL enabled;
-@property(retain, nonatomic) UIKeyboardDockItemButton *button;
-- (id)initWithImageName:(id)arg1 identifier:(id)arg2;
-- (void)setEnabled:(BOOL)arg1;
-- (void)setImage:(UIImage *)arg1;
-@end
+void TXTInitializeKeyboardInputHooks(void);
 
+#ifdef __cplusplus
+}
+#endif
 
-@interface UIKeyboardDockView : UIView
--(void)setRightDockItem:(UIKeyboardDockItem *)arg1;
-@end
-
-@interface UISystemKeyboardDockController : UIViewController
-@property (nonatomic,retain) UIKeyboardDockView *dockView;
-@property (nonatomic,retain) UILongPressGestureRecognizer *longPress;
-- (void)loadView;
-- (void)dictationItemButtonWasPressed:(id)arg1 withEvent:(id)arg2;
-- (void)txtToggleActive;
-- (void)txtLongPress:(UILongPressGestureRecognizer *)gesture;
-@end
-
-@interface UIKeyboardImpl : UIView
-- (void)insertText:(id)arg1;
-@end
-
-@interface UIRemoteKeyboardWindow : UIWindow
-- (double)windowLevel;
-- (double)defaultWindowLevel;
-@end
-
-@interface UIKBInputDelegateManager : NSObject
--(void)deleteBackward;
--(void)insertText:(NSString *)text;
-@end
-
-@interface _UITextKitTextRange : UITextRange
--(NSRange)asRange;
-@end
-
-@interface NSDictionary (Private)
-- (_Bool)boolValueForKey:(id)arg1 withDefault:(_Bool)arg2;
-@end
-
-@class TXTStyleManager;
-
-static TXTStyleManager *styleManager;
-static TXTStyleSelectionController *selectionWindow;
-
-static BOOL enabled;
-static BOOL toggleMenu;
-static BOOL tintMenu;
-static BOOL menuIcon;
-static BOOL tintIcon;
-static NSString *menuLabel;
-
-static BOOL menuOpen;
-static BOOL active;
-static int spongebobCounter;
+NS_ASSUME_NONNULL_END

@@ -1,4 +1,5 @@
 #import "TXTListController.h"
+#import "TXTPreferences.h"
 #import <Preferences/PSSpecifier.h>
 
 @implementation TXTListController
@@ -26,35 +27,34 @@
 }
 
 - (id)readPreferenceValue:(PSSpecifier *)specifier {
-    #ifdef THEOS_PACKAGE_INSTALL_PREFIX
-    NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"/var/jb/User/Library/Preferences/%@.plist", [specifier.properties objectForKey:@"defaults"]]];
-    #else
-    NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"/User/Library/Preferences/%@.plist", [specifier.properties objectForKey:@"defaults"]]];
-    #endif
+    NSString *domain = specifier.properties[@"defaults"];
+    NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:
+        [TXTPreferencesDirectory stringByAppendingPathComponent:
+            [domain stringByAppendingPathExtension:@"plist"]]];
 
-    if (![prefs objectForKey:[specifier.properties objectForKey:@"key"]]) {
-        return [specifier.properties objectForKey:@"default"];
-    }
-
-    return [prefs objectForKey:[specifier.properties objectForKey:@"key"]];
+    return prefs[specifier.properties[@"key"]] ?:
+        specifier.properties[@"default"];
 }
 
 - (void)setPreferenceValue:(id)value specifier:(PSSpecifier *)specifier {
+    NSString *domain = specifier.properties[@"defaults"];
+    NSString *path = [TXTPreferencesDirectory stringByAppendingPathComponent:
+        [domain stringByAppendingPathExtension:@"plist"]];
 
-    #ifdef THEOS_PACKAGE_INSTALL_PREFIX
-    NSString *path = [NSString stringWithFormat:@"/var/jb/var/mobile/Library/Preferences/%@.plist", specifier.properties[@"defaults"]];
-    #else
-    NSString *path = [NSString stringWithFormat:@"/var/mobile/Library/Preferences/%@.plist", specifier.properties[@"defaults"]];
-    #endif
-
-    NSMutableDictionary *prefs = [NSMutableDictionary dictionary];
-    [prefs addEntriesFromDictionary:[NSDictionary dictionaryWithContentsOfFile:path]];
+    NSMutableDictionary *prefs =
+        [NSMutableDictionary dictionaryWithContentsOfFile:path] ?:
+        [NSMutableDictionary dictionary];
    
     [prefs setObject:value forKey:specifier.properties[@"key"]];
     [prefs writeToFile:path atomically:YES];
 
     if ([specifier.properties objectForKey:@"PostNotification"]) {
-        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)[specifier.properties objectForKey:@"PostNotification"], NULL, NULL, YES);
+        CFNotificationCenterPostNotification(
+            CFNotificationCenterGetDarwinNotifyCenter(),
+            (__bridge CFStringRef)specifier.properties[@"PostNotification"],
+            NULL,
+            NULL,
+            YES);
     }
 }
 
